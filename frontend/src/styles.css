@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #070a0f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.12), transparent 26rem),
+    linear-gradient(135deg, #070a0f 0%, #111827 46%, #08111b 100%);
+  color: #e5edf7;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.telemetry-line {
+  clip-path: polygon(0 72%, 12% 58%, 22% 62%, 34% 38%, 46% 50%, 58% 24%, 70% 35%, 82% 18%, 100% 28%, 100% 100%, 0 100%);
+}
