@@ -37,3 +37,19 @@ class DeviceRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DeviceTelemetryRead(BaseModel):
+    device_id: str
+    temperatura: float
+    bateria: float
+    combustivel: float
+    rssi: int
+    ultima_atualizacao: datetime
+    source: str = "simulated"
+
+
+class DeviceHistoryEvent(BaseModel):
+    action: str
+    status: str
+    created_at: datetime

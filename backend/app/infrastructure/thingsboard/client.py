@@ -39,6 +39,9 @@ class ThingsBoardClient:
             payload["label"] = label
         return await self._request("POST", "/api/device", json=payload)
 
+    async def delete_device(self, device_id: str) -> None:
+        await self._request("DELETE", f"/api/device/{device_id}")
+
     async def get_latest_telemetry(self, device_id: str, keys: list[str] | None = None) -> dict[str, Any]:
         query = {"keys": ",".join(keys)} if keys else None
         return await self._request(

@@ -212,8 +212,24 @@ def auth_headers(user: User) -> dict[str, str]:
 
 
 class FakeThingsBoardClient:
+    def __init__(self) -> None:
+        self.created: list[str] = []
+        self.deleted: list[str] = []
+
     async def create_device(self, name: str, device_type: str, label: str | None = None) -> dict:
+        self.created.append(name)
         return {"id": {"id": f"tb-{name.lower().replace(' ', '-')}"}}
+
+    async def delete_device(self, device_id: str) -> None:
+        self.deleted.append(device_id)
+
+    async def get_latest_telemetry(self, device_id: str, keys: list[str] | None = None) -> dict:
+        return {
+            "temperature": [{"ts": 1_700_000_000_000, "value": "24.5"}],
+            "battery": [{"ts": 1_700_000_000_000, "value": "88"}],
+            "fuel": [{"ts": 1_700_000_000_000, "value": "62"}],
+            "rssi": [{"ts": 1_700_000_000_000, "value": "-67"}],
+        }
 
 
 @pytest.fixture()

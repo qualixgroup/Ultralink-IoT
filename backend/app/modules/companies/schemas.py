@@ -7,6 +7,11 @@ class PartnerCreate(BaseModel):
     name: str
 
 
+class PartnerUpdate(BaseModel):
+    name: str | None = None
+    status: str | None = None
+
+
 class PartnerRead(BaseModel):
     id: str
     name: str
@@ -45,6 +50,12 @@ class SiteCreate(BaseModel):
     address: str | None = None
 
 
+class SiteUpdate(BaseModel):
+    name: str | None = None
+    address: str | None = None
+    status: str | None = None
+
+
 class SiteRead(BaseModel):
     id: str
     organization_id: str
@@ -61,6 +72,13 @@ class AssetCreate(BaseModel):
     site_id: str
     name: str
     type: str = "generic"
+
+
+class AssetUpdate(BaseModel):
+    site_id: str | None = None
+    name: str | None = None
+    type: str | None = None
+    status: str | None = None
 
 
 class AssetRead(BaseModel):

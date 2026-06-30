@@ -13,6 +13,7 @@ def test_full_health_returns_ok_when_dependencies_are_connected(client, monkeypa
         return {"status": "ok"}
 
     monkeypatch.setattr(main_module, "_check_database", lambda: {"status": "ok"})
+    monkeypatch.setattr(main_module, "_check_alembic_version", lambda: {"status": "ok", "version": "test"})
     monkeypatch.setattr(main_module, "_check_redis", lambda: {"status": "ok"})
     monkeypatch.setattr(main_module, "_check_thingsboard", fake_thingsboard_check)
 
@@ -27,6 +28,7 @@ def test_full_health_returns_503_when_a_dependency_fails(client, monkeypatch):
         return {"status": "ok"}
 
     monkeypatch.setattr(main_module, "_check_database", lambda: {"status": "ok"})
+    monkeypatch.setattr(main_module, "_check_alembic_version", lambda: {"status": "ok", "version": "test"})
     monkeypatch.setattr(main_module, "_check_redis", lambda: {"status": "error"})
     monkeypatch.setattr(main_module, "_check_thingsboard", fake_thingsboard_check)
 

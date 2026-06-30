@@ -1,13 +1,23 @@
-# Ultralink Monitor
+# Ultralink IoT
 
-Plataforma SaaS para monitoramento IoT corporativo. O produto visível ao usuário final é o Ultralink Monitor; o ThingsBoard fica encapsulado como motor interno de telemetria, integrações e comunicação com dispositivos.
+Plataforma SaaS multi-tenant para monitoramento IoT corporativo. O produto visivel ao usuario final e o Ultralink IoT; o ThingsBoard fica encapsulado como motor interno de telemetria e integracao com dispositivos.
+
+## Sprint 2
+
+Vertical slice funcional:
+
+```text
+Login -> Organization -> Site -> Asset -> Device -> Telemetria
+```
+
+O frontend usa apenas a API do Ultralink. Nenhuma tela do ThingsBoard, URL interna, token, tenant, dashboard ou credencial e exposta para o usuario final.
 
 ## Estrutura
 
 ```text
-frontend/  React, Vite, TypeScript, TailwindCSS, React Router, React Query, React Flow
+frontend/  React, Vite, TypeScript, TailwindCSS, React Router, React Query
 backend/   FastAPI, SQLAlchemy, Alembic, JWT, PostgreSQL, Redis
-docs/      Arquitetura, integrações e decisões técnicas
+docs/      API, backend, frontend, RBAC, ThingsBoard e deploy
 docker/    Infraestrutura local
 ```
 
@@ -17,7 +27,7 @@ docker/    Infraestrutura local
 
 ```bash
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+cp frontend/.env.production.example frontend/.env
 ```
 
 2. Suba a infraestrutura:
@@ -50,19 +60,39 @@ npm run dev
 
 ## Acessos locais
 
-Frontend: http://127.0.0.1:5173  
-Backend Swagger: http://127.0.0.1:8000/docs  
+```text
+Frontend: http://127.0.0.1:5173
+Backend Swagger: http://127.0.0.1:8000/docs
 Backend Health: http://127.0.0.1:8000/health
+Backend Full Health: http://127.0.0.1:8000/health/full
+```
 
-Usuário inicial de desenvolvimento:
+Usuario inicial de desenvolvimento:
 
 ```text
 admin@ultralink.io
 admin123
 ```
 
-Em produção, a API bloqueia inicialização com `JWT_SECRET_KEY` fraco, CORS aberto ou senha inicial insegura.
+Em producao, a API bloqueia inicializacao com `JWT_SECRET_KEY` fraco, CORS aberto ou senha inicial insegura.
 
-## Regra de integração
+## Qualidade
 
-Dispositivos, credenciais, telemetria e comandos devem passar pela API do Ultralink Monitor. Nenhuma tela deve expor URL, token, tenant, dashboard ou credencial do ThingsBoard para o usuário final.
+```bash
+cd backend
+python -m pytest
+python -m ruff check app tests
+python -m mypy app
+
+cd ../frontend
+npm run build
+```
+
+## Documentacao
+
+- [API](docs/api.md)
+- [Backend](docs/backend.md)
+- [Frontend](docs/frontend.md)
+- [RBAC](docs/rbac.md)
+- [ThingsBoard](docs/thingsboard.md)
+- [Deploy](docs/deployment.md)

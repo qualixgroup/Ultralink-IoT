@@ -1,42 +1,54 @@
-# Integração ThingsBoard
+# ThingsBoard
 
-O ThingsBoard é um componente interno da plataforma Ultralink Monitor.
+O ThingsBoard e um componente interno da plataforma Ultralink IoT.
 
 ## Papel do ThingsBoard
 
 - Receber telemetria via MQTT/HTTP.
-- Armazenar séries temporais de dispositivos.
-- Controlar credenciais técnicas de dispositivos.
-- Fornecer dados ao backend do Ultralink Monitor via REST API.
+- Armazenar series temporais de dispositivos.
+- Controlar credenciais tecnicas de dispositivos.
+- Fornecer dados ao backend do Ultralink via REST API.
 
-## Papel do Ultralink Monitor
+## Papel do Ultralink IoT
 
-- Autenticar usuários finais.
-- Aplicar regras multiempresa.
-- Expor dashboards próprios.
-- Centralizar alertas, relatórios e automações.
-- Consultar telemetria no ThingsBoard sem expor o provedor.
+- Autenticar usuarios finais.
+- Aplicar RBAC e isolamento multi-tenant.
+- Expor dashboards proprios.
+- Centralizar inventario, alertas e auditoria.
+- Consultar telemetria sem expor o provedor.
 
-## Regra de segurança
-
-O frontend nunca deve consumir a API do ThingsBoard. Toda chamada deve passar pelo backend:
+## Fluxo
 
 ```text
 Dispositivo -> ThingsBoard -> Backend Ultralink -> Frontend Ultralink
 ```
 
-Para ações administrativas:
+Para operacoes administrativas:
 
 ```text
 Frontend Ultralink -> Backend Ultralink -> ThingsBoard
 ```
 
-## Variáveis principais
+## Sincronizacao de Device
+
+Ao criar um Device pela API Ultralink:
+
+1. o device e salvo localmente
+2. o backend cria o device no ThingsBoard
+3. o backend armazena `thingsboard_device_id`
+4. o frontend recebe apenas o ID Ultralink
+
+Ao excluir:
+
+1. o backend remove o device no ThingsBoard
+2. o device local e marcado como `deleted`
+
+## Seguranca
+
+O frontend nunca deve consumir a API do ThingsBoard. As variaveis abaixo pertencem somente ao backend:
 
 ```text
 THINGSBOARD_BASE_URL
 THINGSBOARD_USERNAME
 THINGSBOARD_PASSWORD
 ```
-
-Essas variáveis pertencem somente ao backend e não devem ser publicadas no frontend.

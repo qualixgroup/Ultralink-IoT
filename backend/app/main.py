@@ -64,6 +64,15 @@ def _check_database() -> dict[str, str]:
     return {"status": "ok"}
 
 
+def _check_alembic_version() -> dict[str, str]:
+    try:
+        with engine.connect() as connection:
+            version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one_or_none()
+    except SQLAlchemyError:
+        return {"status": "error", "version": "unknown"}
+    return {"status": "ok" if version else "error", "version": str(version or "unknown")}
+
+
 def _check_redis() -> dict[str, str]:
     redis_client = get_redis_client()
     try:
@@ -89,6 +98,7 @@ async def full_health_check() -> JSONResponse:
     checks = {
         "api": {"status": "ok"},
         "database": _check_database(),
+        "alembic": _check_alembic_version(),
         "redis": _check_redis(),
         "thingsboard": await _check_thingsboard(),
     }

@@ -4,22 +4,25 @@ from app.common.dependencies import (
     CurrentUser,
     DbSession,
     require_permission,
+    user_can_access_organization,
     user_can_access_partner,
     visible_organization_ids,
 )
-from app.modules.audit.service import AuditService
 from app.modules.companies.models import Asset, Organization, Partner, Site
 from app.modules.companies.repository import AssetRepository, OrganizationRepository, PartnerRepository, SiteRepository
 from app.modules.companies.schemas import (
     AssetCreate,
     AssetRead,
+    AssetUpdate,
     OrganizationCreate,
     OrganizationRead,
     OrganizationUpdate,
     PartnerCreate,
     PartnerRead,
+    PartnerUpdate,
     SiteCreate,
     SiteRead,
+    SiteUpdate,
 )
 from app.modules.companies.service import CompanyService
 
@@ -43,16 +46,50 @@ def list_partners(db: DbSession, current_user: CurrentUser) -> list[Partner]:
     dependencies=[Depends(require_permission("partners:write"))],
 )
 def create_partner(payload: PartnerCreate, db: DbSession, current_user: CurrentUser) -> Partner:
-    partner = PartnerRepository(db).create(payload)
-    AuditService(db).record(
-        "partner.created",
-        actor=current_user,
-        partner_id=partner.id,
-        resource_type="partner",
-        resource_id=partner.id,
-        metadata={"name": partner.name},
-    )
+    return CompanyService(db).create_partner(payload, current_user)
+
+
+@router.get(
+    "/partners/{partner_id}",
+    response_model=PartnerRead,
+    dependencies=[Depends(require_permission("partners:read"))],
+)
+def get_partner(partner_id: str, db: DbSession, current_user: CurrentUser) -> Partner:
+    partner = PartnerRepository(db).get_by_id(partner_id)
+    if not partner:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partner not found")
+    if not user_can_access_partner(current_user, partner.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Partner access denied")
     return partner
+
+
+@router.patch(
+    "/partners/{partner_id}",
+    response_model=PartnerRead,
+    dependencies=[Depends(require_permission("partners:write"))],
+)
+def update_partner(
+    partner_id: str,
+    payload: PartnerUpdate,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> Partner:
+    partner = PartnerRepository(db).get_by_id(partner_id)
+    if not partner:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partner not found")
+    return CompanyService(db).update_partner(partner, payload, current_user)
+
+
+@router.delete(
+    "/partners/{partner_id}",
+    response_model=PartnerRead,
+    dependencies=[Depends(require_permission("partners:write"))],
+)
+def delete_partner(partner_id: str, db: DbSession, current_user: CurrentUser) -> Partner:
+    partner = PartnerRepository(db).get_by_id(partner_id)
+    if not partner:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partner not found")
+    return CompanyService(db).update_partner(partner, PartnerUpdate(status="deleted"), current_user)
 
 
 @router.get(
@@ -90,18 +127,20 @@ def list_organizations(db: DbSession, current_user: CurrentUser) -> list[Organiz
     dependencies=[Depends(require_permission("organizations:write"))],
 )
 def create_organization(payload: OrganizationCreate, db: DbSession, current_user: CurrentUser) -> Organization:
-    if not user_can_access_partner(current_user, payload.partner_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Partner access denied")
-    organization = OrganizationRepository(db).create(payload)
-    AuditService(db).record(
-        "organization.created",
-        actor=current_user,
-        partner_id=organization.partner_id,
-        organization_id=organization.id,
-        resource_type="organization",
-        resource_id=organization.id,
-        metadata={"name": organization.name},
-    )
+    return CompanyService(db).create_organization(payload, current_user)
+
+
+@router.get(
+    "/organizations/{organization_id}",
+    response_model=OrganizationRead,
+    dependencies=[Depends(require_permission("organizations:read"))],
+)
+def get_organization(organization_id: str, db: DbSession, current_user: CurrentUser) -> Organization:
+    organization = OrganizationRepository(db).get_by_id(organization_id)
+    if not organization:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+    if not user_can_access_organization(db, current_user, organization.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization access denied")
     return organization
 
 
@@ -120,20 +159,7 @@ def update_organization(
     organization = repository.get_by_id(organization_id)
     if not organization:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
-    if not user_can_access_partner(current_user, organization.partner_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Partner access denied")
-
-    updated = repository.update(organization, payload)
-    AuditService(db).record(
-        "organization.updated",
-        actor=current_user,
-        partner_id=updated.partner_id,
-        organization_id=updated.id,
-        resource_type="organization",
-        resource_id=updated.id,
-        metadata=payload.model_dump(exclude_unset=True),
-    )
-    return updated
+    return CompanyService(db).update_organization(organization, payload, current_user)
 
 
 @router.delete(
@@ -146,19 +172,7 @@ def delete_organization(organization_id: str, db: DbSession, current_user: Curre
     organization = repository.get_by_id(organization_id)
     if not organization:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
-    if not user_can_access_partner(current_user, organization.partner_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Partner access denied")
-
-    updated = repository.update(organization, OrganizationUpdate(status="deleted"))
-    AuditService(db).record(
-        "organization.deleted",
-        actor=current_user,
-        partner_id=updated.partner_id,
-        organization_id=updated.id,
-        resource_type="organization",
-        resource_id=updated.id,
-    )
-    return updated
+    return CompanyService(db).update_organization(organization, OrganizationUpdate(status="deleted"), current_user)
 
 
 @router.get("/sites", response_model=list[SiteRead], dependencies=[Depends(require_permission("sites:read"))])
@@ -176,6 +190,32 @@ def create_site(payload: SiteCreate, db: DbSession, current_user: CurrentUser) -
     return CompanyService(db).create_site(payload, current_user)
 
 
+@router.get("/sites/{site_id}", response_model=SiteRead, dependencies=[Depends(require_permission("sites:read"))])
+def get_site(site_id: str, db: DbSession, current_user: CurrentUser) -> Site:
+    site = SiteRepository(db).get_by_id(site_id)
+    if not site:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Site not found")
+    if not user_can_access_organization(db, current_user, site.organization_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization access denied")
+    return site
+
+
+@router.patch("/sites/{site_id}", response_model=SiteRead, dependencies=[Depends(require_permission("sites:write"))])
+def update_site(site_id: str, payload: SiteUpdate, db: DbSession, current_user: CurrentUser) -> Site:
+    site = SiteRepository(db).get_by_id(site_id)
+    if not site:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Site not found")
+    return CompanyService(db).update_site(site, payload, current_user)
+
+
+@router.delete("/sites/{site_id}", response_model=SiteRead, dependencies=[Depends(require_permission("sites:write"))])
+def delete_site(site_id: str, db: DbSession, current_user: CurrentUser) -> Site:
+    site = SiteRepository(db).get_by_id(site_id)
+    if not site:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Site not found")
+    return CompanyService(db).update_site(site, SiteUpdate(status="deleted"), current_user)
+
+
 @router.get("/assets", response_model=list[AssetRead], dependencies=[Depends(require_permission("assets:read"))])
 def list_assets(db: DbSession, current_user: CurrentUser) -> list[Asset]:
     return AssetRepository(db).list(organization_ids=visible_organization_ids(db, current_user))
@@ -189,3 +229,37 @@ def list_assets(db: DbSession, current_user: CurrentUser) -> list[Asset]:
 )
 def create_asset(payload: AssetCreate, db: DbSession, current_user: CurrentUser) -> Asset:
     return CompanyService(db).create_asset(payload, current_user)
+
+
+@router.get("/assets/{asset_id}", response_model=AssetRead, dependencies=[Depends(require_permission("assets:read"))])
+def get_asset(asset_id: str, db: DbSession, current_user: CurrentUser) -> Asset:
+    asset = AssetRepository(db).get_by_id(asset_id)
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    if not user_can_access_organization(db, current_user, asset.organization_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization access denied")
+    return asset
+
+
+@router.patch(
+    "/assets/{asset_id}",
+    response_model=AssetRead,
+    dependencies=[Depends(require_permission("assets:write"))],
+)
+def update_asset(asset_id: str, payload: AssetUpdate, db: DbSession, current_user: CurrentUser) -> Asset:
+    asset = AssetRepository(db).get_by_id(asset_id)
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    return CompanyService(db).update_asset(asset, payload, current_user)
+
+
+@router.delete(
+    "/assets/{asset_id}",
+    response_model=AssetRead,
+    dependencies=[Depends(require_permission("assets:write"))],
+)
+def delete_asset(asset_id: str, db: DbSession, current_user: CurrentUser) -> Asset:
+    asset = AssetRepository(db).get_by_id(asset_id)
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    return CompanyService(db).update_asset(asset, AssetUpdate(status="deleted"), current_user)

@@ -1,7 +1,16 @@
 from sqlalchemy.orm import Session
 
 from app.modules.companies.models import Asset, Organization, Partner, Site
-from app.modules.companies.schemas import AssetCreate, OrganizationCreate, OrganizationUpdate, PartnerCreate, SiteCreate
+from app.modules.companies.schemas import (
+    AssetCreate,
+    AssetUpdate,
+    OrganizationCreate,
+    OrganizationUpdate,
+    PartnerCreate,
+    PartnerUpdate,
+    SiteCreate,
+    SiteUpdate,
+)
 
 
 class PartnerRepository:
@@ -17,6 +26,13 @@ class PartnerRepository:
     def create(self, payload: PartnerCreate) -> Partner:
         partner = Partner(**payload.model_dump())
         self.db.add(partner)
+        self.db.commit()
+        self.db.refresh(partner)
+        return partner
+
+    def update(self, partner: Partner, payload: PartnerUpdate) -> Partner:
+        for field, value in payload.model_dump(exclude_unset=True).items():
+            setattr(partner, field, value)
         self.db.commit()
         self.db.refresh(partner)
         return partner
@@ -72,6 +88,13 @@ class SiteRepository:
         self.db.refresh(site)
         return site
 
+    def update(self, site: Site, payload: SiteUpdate) -> Site:
+        for field, value in payload.model_dump(exclude_unset=True).items():
+            setattr(site, field, value)
+        self.db.commit()
+        self.db.refresh(site)
+        return site
+
 
 class AssetRepository:
     def __init__(self, db: Session) -> None:
@@ -89,6 +112,13 @@ class AssetRepository:
     def create(self, payload: AssetCreate) -> Asset:
         asset = Asset(**payload.model_dump())
         self.db.add(asset)
+        self.db.commit()
+        self.db.refresh(asset)
+        return asset
+
+    def update(self, asset: Asset, payload: AssetUpdate) -> Asset:
+        for field, value in payload.model_dump(exclude_unset=True).items():
+            setattr(asset, field, value)
         self.db.commit()
         self.db.refresh(asset)
         return asset

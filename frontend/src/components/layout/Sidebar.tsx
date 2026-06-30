@@ -1,17 +1,32 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Bell, Bot, Building2, Gauge, GitBranch, LayoutDashboard, LogOut, RadioTower, Settings, Shield } from "lucide-react";
+import {
+  Bell,
+  Bot,
+  Building2,
+  Factory,
+  Gauge,
+  GitBranch,
+  LayoutDashboard,
+  LogOut,
+  MapPin,
+  RadioTower,
+  Settings,
+  Shield,
+} from "lucide-react";
 import { clsx } from "clsx";
 
 import { clearToken } from "../../lib/auth";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Dispositivos", href: "/devices", icon: RadioTower },
+  { label: "Organizations", href: "/organizations", icon: Building2 },
+  { label: "Sites", href: "/sites", icon: MapPin },
+  { label: "Assets", href: "/assets", icon: Factory },
+  { label: "Devices", href: "/devices", icon: RadioTower },
   { label: "Alertas", href: "/alerts", icon: Bell },
-  { label: "Empresas", href: "/companies", icon: Building2 },
-  { label: "Automações", href: "/workflows", icon: GitBranch },
+  { label: "Automacoes", href: "/workflows", icon: GitBranch },
   { label: "IA", href: "/ai", icon: Bot },
-  { label: "Integrações", href: "/integrations", icon: Settings },
+  { label: "Integracoes", href: "/integrations", icon: Settings },
 ];
 
 export function Sidebar() {
