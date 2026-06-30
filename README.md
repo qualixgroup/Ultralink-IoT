@@ -57,9 +57,11 @@ Backend Health: http://127.0.0.1:8000/health
 Usuário inicial de desenvolvimento:
 
 ```text
-admin@ultralink.local
+admin@ultralink.io
 admin123
 ```
+
+Em produção, a API bloqueia inicialização com `JWT_SECRET_KEY` fraco, CORS aberto ou senha inicial insegura.
 
 ## Regra de integração
 

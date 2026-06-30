@@ -1,25 +1,62 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
 
-from app.common.dependencies import CurrentUser, DbSession
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.common.dependencies import (
+    CurrentUser,
+    DbSession,
+    get_thingsboard_client,
+    require_permission,
+    visible_organization_ids,
+)
+from app.infrastructure.thingsboard.client import ThingsBoardClient
+from app.modules.devices.models import Device
 from app.modules.devices.repository import DeviceRepository
-from app.modules.devices.schemas import DeviceCreate, DeviceRead
+from app.modules.devices.schemas import DeviceCreate, DeviceRead, DeviceUpdate
 from app.modules.devices.service import DeviceService
 
 router = APIRouter(prefix="/devices", tags=["devices"])
 
 
-@router.get("", response_model=list[DeviceRead])
-def list_devices(db: DbSession, current_user: CurrentUser) -> list[DeviceRead]:
-    company_id = None if current_user.role == "owner" else current_user.company_id
-    return DeviceRepository(db).list(company_id=company_id)
+@router.get("", response_model=list[DeviceRead], dependencies=[Depends(require_permission("devices:read"))])
+def list_devices(db: DbSession, current_user: CurrentUser) -> list[Device]:
+    return DeviceRepository(db).list(organization_ids=visible_organization_ids(db, current_user))
 
 
-@router.post("", response_model=DeviceRead, status_code=201)
-async def create_device(payload: DeviceCreate, db: DbSession, _: CurrentUser) -> DeviceRead:
+@router.post(
+    "",
+    response_model=DeviceRead,
+    status_code=201,
+    dependencies=[Depends(require_permission("devices:write"))],
+)
+async def create_device(
+    payload: DeviceCreate,
+    db: DbSession,
+    current_user: CurrentUser,
+    thingsboard: Annotated[ThingsBoardClient, Depends(get_thingsboard_client)],
+) -> Device:
     try:
-        return await DeviceService(db).create_device(payload)
+        return await DeviceService(db, thingsboard).create_device(payload, current_user)
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Could not create device through ThingsBoard",
         ) from exc
+
+
+@router.patch("/{device_id}", response_model=DeviceRead, dependencies=[Depends(require_permission("devices:write"))])
+def update_device(device_id: str, payload: DeviceUpdate, db: DbSession, current_user: CurrentUser) -> Device:
+    device = DeviceRepository(db).get_by_id(device_id)
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+    return DeviceService(db).update_device(device, payload, current_user)
+
+
+@router.delete("/{device_id}", response_model=DeviceRead, dependencies=[Depends(require_permission("devices:write"))])
+def delete_device(device_id: str, db: DbSession, current_user: CurrentUser) -> Device:
+    device = DeviceRepository(db).get_by_id(device_id)
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+    return DeviceService(db).delete_device(device, current_user)

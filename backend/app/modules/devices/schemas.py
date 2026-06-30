@@ -5,17 +5,30 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class DeviceCreate(BaseModel):
-    company_id: str
+    organization_id: str
+    site_id: str | None = None
+    asset_id: str | None = None
     name: str
     label: str | None = None
     type: str = "sensor"
     attributes: dict[str, Any] = Field(default_factory=dict)
 
 
+class DeviceUpdate(BaseModel):
+    site_id: str | None = None
+    asset_id: str | None = None
+    name: str | None = None
+    label: str | None = None
+    type: str | None = None
+    status: str | None = None
+    attributes: dict[str, Any] | None = None
+
+
 class DeviceRead(BaseModel):
     id: str
-    company_id: str
-    thingsboard_device_id: str
+    organization_id: str
+    site_id: str | None
+    asset_id: str | None
     name: str
     label: str | None
     type: str

@@ -1,6 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from app.common.dependencies import CurrentUser, DbSession
+from app.common.dependencies import CurrentUser, DbSession, require_permission, visible_organization_ids
 from app.modules.alerts.models import Alert
 from app.modules.dashboards.schemas import DashboardSummary
 from app.modules.devices.models import Device
@@ -8,13 +8,14 @@ from app.modules.devices.models import Device
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
 
 
-@router.get("/summary", response_model=DashboardSummary)
+@router.get("/summary", response_model=DashboardSummary, dependencies=[Depends(require_permission("dashboards:read"))])
 def get_summary(db: DbSession, current_user: CurrentUser) -> DashboardSummary:
     devices_query = db.query(Device)
     alerts_query = db.query(Alert)
-    if current_user.role != "owner":
-        devices_query = devices_query.filter(Device.company_id == current_user.company_id)
-        alerts_query = alerts_query.filter(Alert.company_id == current_user.company_id)
+    organization_ids = visible_organization_ids(db, current_user)
+    if organization_ids is not None:
+        devices_query = devices_query.filter(Device.organization_id.in_(organization_ids))
+        alerts_query = alerts_query.filter(Alert.organization_id.in_(organization_ids))
 
     devices = devices_query.all()
     return DashboardSummary(

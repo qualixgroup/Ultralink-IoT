@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class AlertCreate(BaseModel):
-    company_id: str
+    organization_id: str
     device_id: str | None = None
     severity: str = "warning"
     message: str
@@ -12,7 +12,7 @@ class AlertCreate(BaseModel):
 
 class AlertRead(BaseModel):
     id: str
-    company_id: str
+    organization_id: str
     device_id: str | None
     severity: str
     message: str

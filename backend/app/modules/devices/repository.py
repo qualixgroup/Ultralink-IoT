@@ -7,10 +7,10 @@ class DeviceRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list(self, company_id: str | None = None) -> list[Device]:
+    def list(self, organization_ids: list[str] | None = None) -> list[Device]:
         query = self.db.query(Device)
-        if company_id:
-            query = query.filter(Device.company_id == company_id)
+        if organization_ids is not None:
+            query = query.filter(Device.organization_id.in_(organization_ids))
         return query.order_by(Device.created_at.desc()).all()
 
     def get_by_id(self, device_id: str) -> Device | None:
@@ -18,6 +18,13 @@ class DeviceRepository:
 
     def create(self, device: Device) -> Device:
         self.db.add(device)
+        self.db.commit()
+        self.db.refresh(device)
+        return device
+
+    def update(self, device: Device, values: dict) -> Device:
+        for field, value in values.items():
+            setattr(device, field, value)
         self.db.commit()
         self.db.refresh(device)
         return device

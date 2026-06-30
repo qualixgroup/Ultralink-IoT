@@ -8,7 +8,10 @@ A API usa FastAPI com separação por módulos de domínio:
 
 - auth
 - users
-- companies
+- partners
+- organizations
+- sites
+- assets
 - devices
 - dashboards
 - telemetry
@@ -50,4 +53,27 @@ React Flow já está incluído para os fluxos de automação em `workflows`.
 
 ## Multiempresa
 
-O modelo inicial contém `companies` como raiz de escopo. Usuários, dispositivos e alertas carregam `company_id` para permitir isolamento de dados por cliente.
+O modelo SaaS usa a hierarquia:
+
+```text
+Partner -> Organization -> Site -> Asset -> Device
+```
+
+`Organization` é a fronteira principal de dados do cliente. Usuários, dispositivos, alertas e auditoria carregam `partner_id` e/ou `organization_id` para permitir isolamento por parceiro e organização.
+
+Papéis suportados:
+
+- platform_owner
+- platform_admin
+- partner_admin
+- partner_technician
+- organization_admin
+- organization_operator
+- read_only
+
+Regras principais:
+
+- `platform_owner` acessa tudo.
+- `partner_admin` acessa apenas organizações do próprio parceiro.
+- `organization_admin` acessa apenas sua organização.
+- Telemetria e devices nunca expõem URL, token ou credencial do ThingsBoard.

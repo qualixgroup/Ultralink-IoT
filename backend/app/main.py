@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.infrastructure.database.seed import ensure_default_admin
 from app.modules.ai.router import router as ai_router
 from app.modules.alerts.router import router as alerts_router
+from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.companies.router import router as companies_router
 from app.modules.dashboards.router import router as dashboards_router
@@ -54,6 +55,7 @@ app.include_router(devices_router, prefix=settings.api_v1_prefix)
 app.include_router(dashboards_router, prefix=settings.api_v1_prefix)
 app.include_router(telemetry_router, prefix=settings.api_v1_prefix)
 app.include_router(alerts_router, prefix=settings.api_v1_prefix)
+app.include_router(audit_router, prefix=settings.api_v1_prefix)
 app.include_router(integrations_router, prefix=settings.api_v1_prefix)
 app.include_router(ai_router, prefix=settings.api_v1_prefix)
 app.include_router(workflows_router, prefix=settings.api_v1_prefix)

@@ -11,7 +11,7 @@ type LoginResponse = {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@ultralink.local");
+  const [email, setEmail] = useState("admin@ultralink.io");
   const [password, setPassword] = useState("admin123");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

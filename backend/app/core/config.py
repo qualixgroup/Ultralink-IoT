@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 60
 
-    first_superuser_email: str = "admin@ultralink.local"
+    first_superuser_email: str = "admin@ultralink.io"
     first_superuser_password: str = "admin123"
     first_superuser_name: str = "Ultralink Admin"
 
@@ -40,6 +40,19 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
+
+    @model_validator(mode="after")
+    def validate_production_security(self) -> "Settings":
+        if self.app_env != "production":
+            return self
+
+        if self.jwt_secret_key == "change-me-before-production" or len(self.jwt_secret_key) < 32:
+            raise ValueError("JWT_SECRET_KEY must be unique and at least 32 characters in production")
+        if self.first_superuser_password == "admin123":
+            raise ValueError("FIRST_SUPERUSER_PASSWORD must be changed in production")
+        if "*" in self.cors_origins:
+            raise ValueError("CORS_ORIGINS cannot include '*' in production")
+        return self
 
 
 @lru_cache

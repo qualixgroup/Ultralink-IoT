@@ -13,8 +13,17 @@ class UserRepository:
     def get_by_email(self, email: str) -> User | None:
         return self.db.query(User).filter(User.email == email.lower()).first()
 
-    def list(self) -> list[User]:
-        return self.db.query(User).order_by(User.created_at.desc()).all()
+    def list(
+        self,
+        partner_id: str | None = None,
+        organization_ids: list[str] | None = None,
+    ) -> list[User]:
+        query = self.db.query(User)
+        if partner_id:
+            query = query.filter(User.partner_id == partner_id)
+        if organization_ids is not None:
+            query = query.filter(User.organization_id.in_(organization_ids))
+        return query.order_by(User.created_at.desc()).all()
 
     def create(self, user: User) -> User:
         self.db.add(user)
