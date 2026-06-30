@@ -59,6 +59,12 @@ class SiteRepository:
     def get_by_id(self, site_id: str) -> Site | None:
         return self.db.query(Site).filter(Site.id == site_id).first()
 
+    def list(self, organization_ids: list[str] | None = None) -> list[Site]:
+        query = self.db.query(Site)
+        if organization_ids is not None:
+            query = query.filter(Site.organization_id.in_(organization_ids))
+        return query.order_by(Site.created_at.desc()).all()
+
     def create(self, payload: SiteCreate) -> Site:
         site = Site(**payload.model_dump())
         self.db.add(site)
@@ -73,6 +79,12 @@ class AssetRepository:
 
     def get_by_id(self, asset_id: str) -> Asset | None:
         return self.db.query(Asset).filter(Asset.id == asset_id).first()
+
+    def list(self, organization_ids: list[str] | None = None) -> list[Asset]:
+        query = self.db.query(Asset)
+        if organization_ids is not None:
+            query = query.filter(Asset.organization_id.in_(organization_ids))
+        return query.order_by(Asset.created_at.desc()).all()
 
     def create(self, payload: AssetCreate) -> Asset:
         asset = Asset(**payload.model_dump())

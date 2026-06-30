@@ -9,7 +9,8 @@ from app.core.rbac import has_permission, is_platform_role
 from app.core.security import decode_access_token
 from app.infrastructure.database.session import get_db
 from app.infrastructure.thingsboard.client import ThingsBoardClient, thingsboard_client
-from app.modules.companies.models import Organization
+from app.modules.companies.models import Asset, Organization
+from app.modules.devices.models import Device
 from app.modules.users.models import User
 from app.modules.users.repository import UserRepository
 
@@ -95,6 +96,20 @@ def user_can_access_organization(db: Session, current_user: User, organization_i
     return False
 
 
+def user_can_access_asset(db: Session, current_user: User, asset_id: str) -> bool:
+    asset = db.query(Asset).filter(Asset.id == asset_id).first()
+    if not asset:
+        return False
+    return user_can_access_organization(db, current_user, asset.organization_id)
+
+
+def user_can_access_device(db: Session, current_user: User, device_id: str) -> bool:
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device:
+        return False
+    return user_can_access_organization(db, current_user, device.organization_id)
+
+
 def require_partner_access(partner_id_param: str = "partner_id"):
     def dependency(request: Request, current_user: CurrentUser) -> User:
         partner_id = _request_value(request, partner_id_param)
@@ -114,6 +129,36 @@ def require_organization_access(organization_id_param: str = "organization_id"):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing organization scope")
         if not user_can_access_organization(db, current_user, organization_id):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization access denied")
+        return current_user
+
+    return dependency
+
+
+def require_asset_access(asset_id_param: str = "asset_id"):
+    def dependency(request: Request, db: DbSession, current_user: CurrentUser) -> User:
+        asset_id = _request_value(request, asset_id_param)
+        if not asset_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing asset scope")
+        asset = db.query(Asset).filter(Asset.id == asset_id).first()
+        if not asset:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+        if not user_can_access_organization(db, current_user, asset.organization_id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Asset access denied")
+        return current_user
+
+    return dependency
+
+
+def require_device_access(device_id_param: str = "device_id"):
+    def dependency(request: Request, db: DbSession, current_user: CurrentUser) -> User:
+        device_id = _request_value(request, device_id_param)
+        if not device_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing device scope")
+        device = db.query(Device).filter(Device.id == device_id).first()
+        if not device:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+        if not user_can_access_organization(db, current_user, device.organization_id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Device access denied")
         return current_user
 
     return dependency

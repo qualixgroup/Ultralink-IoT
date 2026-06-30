@@ -8,15 +8,20 @@ from app.common.dependencies import (
     visible_organization_ids,
 )
 from app.modules.audit.service import AuditService
-from app.modules.companies.models import Organization, Partner
-from app.modules.companies.repository import OrganizationRepository, PartnerRepository
+from app.modules.companies.models import Asset, Organization, Partner, Site
+from app.modules.companies.repository import AssetRepository, OrganizationRepository, PartnerRepository, SiteRepository
 from app.modules.companies.schemas import (
+    AssetCreate,
+    AssetRead,
     OrganizationCreate,
     OrganizationRead,
     OrganizationUpdate,
     PartnerCreate,
     PartnerRead,
+    SiteCreate,
+    SiteRead,
 )
+from app.modules.companies.service import CompanyService
 
 router = APIRouter(tags=["organizations"])
 
@@ -154,3 +159,33 @@ def delete_organization(organization_id: str, db: DbSession, current_user: Curre
         resource_id=updated.id,
     )
     return updated
+
+
+@router.get("/sites", response_model=list[SiteRead], dependencies=[Depends(require_permission("sites:read"))])
+def list_sites(db: DbSession, current_user: CurrentUser) -> list[Site]:
+    return SiteRepository(db).list(organization_ids=visible_organization_ids(db, current_user))
+
+
+@router.post(
+    "/sites",
+    response_model=SiteRead,
+    status_code=201,
+    dependencies=[Depends(require_permission("sites:write"))],
+)
+def create_site(payload: SiteCreate, db: DbSession, current_user: CurrentUser) -> Site:
+    return CompanyService(db).create_site(payload, current_user)
+
+
+@router.get("/assets", response_model=list[AssetRead], dependencies=[Depends(require_permission("assets:read"))])
+def list_assets(db: DbSession, current_user: CurrentUser) -> list[Asset]:
+    return AssetRepository(db).list(organization_ids=visible_organization_ids(db, current_user))
+
+
+@router.post(
+    "/assets",
+    response_model=AssetRead,
+    status_code=201,
+    dependencies=[Depends(require_permission("assets:write"))],
+)
+def create_asset(payload: AssetCreate, db: DbSession, current_user: CurrentUser) -> Asset:
+    return CompanyService(db).create_asset(payload, current_user)

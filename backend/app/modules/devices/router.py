@@ -6,6 +6,7 @@ from app.common.dependencies import (
     CurrentUser,
     DbSession,
     get_thingsboard_client,
+    require_device_access,
     require_permission,
     visible_organization_ids,
 )
@@ -46,7 +47,11 @@ async def create_device(
         ) from exc
 
 
-@router.patch("/{device_id}", response_model=DeviceRead, dependencies=[Depends(require_permission("devices:write"))])
+@router.patch(
+    "/{device_id}",
+    response_model=DeviceRead,
+    dependencies=[Depends(require_permission("devices:write")), Depends(require_device_access())],
+)
 def update_device(device_id: str, payload: DeviceUpdate, db: DbSession, current_user: CurrentUser) -> Device:
     device = DeviceRepository(db).get_by_id(device_id)
     if not device:
@@ -54,7 +59,11 @@ def update_device(device_id: str, payload: DeviceUpdate, db: DbSession, current_
     return DeviceService(db).update_device(device, payload, current_user)
 
 
-@router.delete("/{device_id}", response_model=DeviceRead, dependencies=[Depends(require_permission("devices:write"))])
+@router.delete(
+    "/{device_id}",
+    response_model=DeviceRead,
+    dependencies=[Depends(require_permission("devices:write")), Depends(require_device_access())],
+)
 def delete_device(device_id: str, db: DbSession, current_user: CurrentUser) -> Device:
     device = DeviceRepository(db).get_by_id(device_id)
     if not device:

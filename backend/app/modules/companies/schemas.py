@@ -58,7 +58,7 @@ class SiteRead(BaseModel):
 
 class AssetCreate(BaseModel):
     organization_id: str
-    site_id: str | None = None
+    site_id: str
     name: str
     type: str = "generic"
 
@@ -66,7 +66,7 @@ class AssetCreate(BaseModel):
 class AssetRead(BaseModel):
     id: str
     organization_id: str
-    site_id: str | None
+    site_id: str
     name: str
     type: str
     status: str

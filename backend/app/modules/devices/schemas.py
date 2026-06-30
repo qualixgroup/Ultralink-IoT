@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class DeviceCreate(BaseModel):
     organization_id: str
     site_id: str | None = None
-    asset_id: str | None = None
+    asset_id: str
     name: str
     label: str | None = None
     type: str = "sensor"
@@ -27,8 +27,8 @@ class DeviceUpdate(BaseModel):
 class DeviceRead(BaseModel):
     id: str
     organization_id: str
-    site_id: str | None
-    asset_id: str | None
+    site_id: str
+    asset_id: str
     name: str
     label: str | None
     type: str
